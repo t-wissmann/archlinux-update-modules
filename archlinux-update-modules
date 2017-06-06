@@ -49,6 +49,11 @@ set -o pipefail
 set -u
 shopt -s nullglob
 
+if [[ "$#" -gt 0 ]] ; then
+    usage
+    exit 0
+fi
+
 kernel_release=$(uname -r)
 
 # find a pkg file with the modules for the running system

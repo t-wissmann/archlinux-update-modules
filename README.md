@@ -1,4 +1,4 @@
-# archlinux-update-modules.sh
+# archlinux-update-modules
 
 This script manages /usr/lib/modules on arch linux. Just run this script
 whenever you like, e.g. after an upgrade or after rebooting, in order to keep
