@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+# helper functions
+msg() {
+    echo "> $*" >&2
+}
+
+ask() {
+    read -p "==> $* [y/N] " -n 1 REPLY
+    echo >&2
+    if [[ "$REPLY" =~ [yY] ]] ; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+ask_command() {
+    local question="$1"
+    shift
+    if ask "$question"$'\n'":: $* " ; then
+        "$@" || exit 1
+    fi
+}
+
+cmd="$0"
+usage() {
+cat <<EOF
+Usage: $0
+
+This script manages /usr/lib/modules on arch linux. Just run this script
+whenever you like, e.g. after an upgrade or after rebooting, in order to keep
+/usr/lib/modules in a sensible state.
+
+When being run the following tasks are done:
+
+1. The modules directory for the running kernel is restored from the pacman cache.
+
+2. Any old obsolete module directories are removed. Obosolete directories are
+those that are neither used by the running kernel nor managed by pacman itself.
+
+The user is asked before each filesystem change, i.e. before each sudo-command.
+Please run this script as an ordinary user.
+EOF
+}
+
+set -e
+set -o pipefail
+set -u
+shopt -s nullglob
+
+kernel_release=$(uname -r)
+
+# find a pkg file with the modules for the running system
+pkgfile=( /var/cache/pacman/pkg/linux-"${kernel_release%-ARCH}"* )
+running_moddir="/usr/lib/modules/${kernel_release}"
+
+# == restore module directory for current path ==
+# check whether a modules directory exists for the running system
+if [[ ! -d "$running_moddir" ]] ; then
+    msg "The module directory $running_moddir"
+    msg "for the running kernel $(uname -r) does not exist."
+    if [[ "${#pkgfile[@]}" -le 0 ]] ; then
+        msg "But no package linux-"${kernel_release%-ARCH}"* exists in /var/cache/pacman/pkg"
+    else
+        # the moddir path needs to be relative, so no leading /
+        ask_command "Do you want to restore it from ${pkgfile[0]}?" \
+            sudo tar -C / -xvf "${pkgfile[0]}" "${running_moddir#/}"
+    fi
+else
+    msg "The running kernel already has a module directory $running_moddir, nothing to do"
+fi
+
+# == clean up old module directories ==
+# get all old module dirs and save them in an array
+mapfile -t old_module_dirs < <(
+    # list all entries in /usr/lib/modules (find)
+    # then ignore the directory of the running kernel (grep)
+    # then restrict to all directories not owned by any package (pacman)
+    # then remove anything before the file path (sed) and hope that the pacman
+    # message does not change too often, such that the file path remains
+    find /usr/lib/modules -mindepth 1 -maxdepth 1 -printf "%p\n" \
+        | grep -v "/usr/lib/modules/${kernel_release}" \
+        | LC_ALL=C pacman --color never -Qoq - 2>&1 > /dev/null \
+        | sed 's,[^/]*,,'
+)
+
+msg "${#old_module_dirs[@]} old directories in /usr/lib/modules"
+for olddir in "${old_module_dirs[@]}" ; do
+    # ensure that $olddir is really only a subdirectory of /usr/lib/modules
+    ask_command "Remove old module dir $olddir?" \
+        sudo rm -rf "/usr/lib/modules/${old_module_dirs#/usr/lib/modules/}"
+done
+
