@@ -26,7 +26,7 @@ ask_command() {
 cmd="$0"
 usage() {
 cat <<EOF
-Usage: $0
+Usage: $0 [--dont-ask]
 
 This script manages /usr/lib/modules on arch linux. Just run this script
 whenever you like, e.g. after an upgrade or after rebooting, in order to keep
@@ -39,8 +39,8 @@ When being run the following tasks are done:
 2. Any old obsolete module directories are removed. Obosolete directories are
 those that are neither used by the running kernel nor managed by pacman itself.
 
-The user is asked before each filesystem change, i.e. before each sudo-command.
-Please run this script as an ordinary user.
+The user is asked before each filesystem change, i.e. before each sudo-command,
+unless --dont-ask is passed. Please run this script as an ordinary user.
 EOF
 }
 
@@ -50,8 +50,22 @@ set -u
 shopt -s nullglob
 
 if [[ "$#" -gt 0 ]] ; then
-    usage
-    exit 0
+    case "$1" in
+        -h|--help|-help)
+            usage
+            exit 0
+            ;;
+        --dont-ask)
+            ask() {
+                echo "==> $* => Yes"
+            }
+            ;;
+        *)
+            echo "Error: unknown option \"$1\"" >&2
+            usage >&2
+            exit 1
+            ;;
+    esac
 fi
 
 architecture=$(uname -m)
