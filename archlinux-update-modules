@@ -70,13 +70,20 @@ fi
 
 architecture=$(uname -m)
 kernel_release=$(uname -r)
-#kernel_release=4.14.31-1-lts # only for testing
+# kernel_release=4.14.31-1-lts # only for testing
+# kernel_release=5.1.9-arch1-1-ARCH  # only for testing
+# kerenl_release=5.1.10-1-ck-haswell # only for testing
 
-pkg_name=linux
-if [[ "$kernel_release" == *-lts ]] ; then
-    pkg_name=linux-lts
+
+pkg_ver=$(echo "${kernel_release}" | grep -Po ".+-\d+") # split version number from name
+pkg_suffix=${kernel_release/${pkg_ver}/}
+
+if [ "$pkg_suffix" == "-ARCH" ]; then
+    pkg_name="linux"
+else
+    pkg_name="linux${pkg_suffix}"
 fi
-pkg_ver="${kernel_release%-*}" # remove the -ARCH
+
 pkg_ver="${pkg_ver/-arch/.arch}" # it's .arch in the package version but -arch in the uname output
 
 # find a pkg file with the modules for the running system
