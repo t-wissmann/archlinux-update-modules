@@ -72,7 +72,7 @@ architecture=$(uname -m)
 kernel_release=$(uname -r)
 # kernel_release=4.14.31-1-lts # only for testing
 # kernel_release=5.1.9-arch1-1-ARCH  # only for testing
-# kerenl_release=5.1.10-1-ck-haswell # only for testing
+# kernel_release=5.1.10-1-ck-haswell # only for testing
 
 
 pkg_ver=$(echo "${kernel_release}" | grep -Po ".+-\d+") # split version number from name
