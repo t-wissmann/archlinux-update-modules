@@ -86,6 +86,8 @@ fi
 
 pkg_ver="${pkg_ver/-arch/.arch}" # it's .arch in the package version but -arch in the uname output
 
+msg "Running kernel package: name=${pkg_name} version=${pkg_ver} architecture=${architecture}"
+
 # find a pkg file with the modules for the running system
 pkgfile=(/var/cache/pacman/pkg/"${pkg_name}"-"${pkg_ver}"-"${architecture}".pkg.tar*) # use array to expand glob
 running_moddir="/usr/lib/modules/${kernel_release}"
