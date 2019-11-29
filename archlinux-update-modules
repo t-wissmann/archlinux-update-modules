@@ -119,7 +119,7 @@ mapfile -t old_module_dirs < <(
     # just to be sure, we filter for paths finally (grep)
     find /usr/lib/modules -mindepth 1 -maxdepth 1 -printf "%p\n" \
         | grep -v "/usr/lib/modules/${kernel_release}" \
-        | LC_ALL=C pacman --color never -Qoq - 2>&1 > /dev/null \
+        | { LC_ALL=C pacman --color never -Qoq - 2>&1 > /dev/null ; } \
         | sed 's,[^/]*,,' \
         | grep '^/usr/lib/modules/'
 )
