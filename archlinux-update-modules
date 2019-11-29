@@ -116,10 +116,12 @@ mapfile -t old_module_dirs < <(
     # then restrict to all directories not owned by any package (pacman)
     # then remove anything before the file path (sed) and hope that the pacman
     # message does not change too often, such that the file path remains
+    # just to be sure, we filter for paths finally (grep)
     find /usr/lib/modules -mindepth 1 -maxdepth 1 -printf "%p\n" \
         | grep -v "/usr/lib/modules/${kernel_release}" \
         | LC_ALL=C pacman --color never -Qoq - 2>&1 > /dev/null \
-        | sed 's,[^/]*,,'
+        | sed 's,[^/]*,,' \
+        | grep /usr/lib/modules/
 )
 
 msg "${#old_module_dirs[@]} old directories in /usr/lib/modules"
