@@ -121,7 +121,7 @@ mapfile -t old_module_dirs < <(
         | grep -v "/usr/lib/modules/${kernel_release}" \
         | LC_ALL=C pacman --color never -Qoq - 2>&1 > /dev/null \
         | sed 's,[^/]*,,' \
-        | grep /usr/lib/modules/
+        | grep '^/usr/lib/modules/'
 )
 
 msg "${#old_module_dirs[@]} old directories in /usr/lib/modules"
