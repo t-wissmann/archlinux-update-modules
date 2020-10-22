@@ -89,7 +89,7 @@ pkg_ver="${pkg_ver/-arch/.arch}" # it's .arch in the package version but -arch i
 msg "Running kernel package: name=${pkg_name} version=${pkg_ver} architecture=${architecture}"
 
 # find a pkg file with the modules for the running system
-pkgfile=(/var/cache/pacman/pkg/"${pkg_name}"-"${pkg_ver}"-"${architecture}".pkg.tar*) # use array to expand glob
+pkgfile=(/var/cache/pacman/pkg/"${pkg_name}"-"${pkg_ver}"-"${architecture}".pkg.tar.zst)
 running_moddir="/usr/lib/modules/${kernel_release}"
 
 # == restore module directory for current path ==
@@ -97,12 +97,18 @@ running_moddir="/usr/lib/modules/${kernel_release}"
 if [[ ! -d "$running_moddir" ]] ; then
     msg "The module directory $running_moddir"
     msg "for the running kernel ${kernel_release} does not exist."
-    if [[ ! -e "${pkgfile[0]}" ]] ; then
-        msg "But the package does not exist: ${pkgfile[0]}"
+    if [[ ! -e "${pkgfile}" ]] ; then
+      pushd /var/cache/pacman/pkg
+      msg "Package missing, trying to fetch from archive.archlinux.org"
+      wget "https://archive.archlinux.org/packages/l/linux/${pkgfile}"
+      popd
+    fi
+    if [[ ! -e "${pkgfile}" ]] ; then
+        msg "But the package does not exist: ${pkgfile}"
     else
         # the moddir path needs to be relative, so no leading /
-        ask_command "Do you want to restore it from ${pkgfile[0]}?" \
-            sudo tar -C / -xvf "${pkgfile[0]}" "${running_moddir#/}"
+        ask_command "Do you want to restore it from ${pkgfile}?" \
+            sudo tar -C / -xvf "${pkgfile}" "${running_moddir#/}"
     fi
 else
     msg "The running kernel ${kernel_release} already has a module directory $running_moddir, nothing to do"
